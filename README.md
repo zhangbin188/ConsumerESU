@@ -48,14 +48,14 @@ ______________________________
 Usage
 -----
 
-- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/main.zip) button at the top to download.
+- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
 - Extract all files from the ZIP file.
 - Run `Consumer_ESU_Enrollment_run.cmd` as administrator.
 
 Advanced Usage
 --------------
 
-- Download [Consumer_ESU_Enrollment.ps1](https://github.com/abbodi1406/ConsumerESU/raw/refs/heads/main/Consumer_ESU_Enrollment.ps1) as raw, or download the ZIP and extract the script.
+- Download [Consumer_ESU_Enrollment.ps1](https://github.com/abbodi1406/ConsumerESU/raw/refs/heads/master/Consumer_ESU_Enrollment.ps1) as raw, or download the ZIP and extract the script.
 - Run *`Windows Powershell`* as administrator in the same folder where you located the script, or change location to it using `cd` command.
 - Temporary allow running unsigned scripts:  
 `Set-ExecutionPolicy Bypass -Scope Process -Force`
