@@ -1,0 +1,106 @@
+Consumer ESU Enrollment
+=======================
+
+Windows Powershell script to enroll in Windows 10 Consumer Extended Security Updates (ESU) program via the free Backup option, with or without Microsoft Account.
+
+Requirements
+------------
+
+- [Consumer ESU Prerequisites](https://support.microsoft.com/help/5063038).
+- Cumulative Update 2025-07 KB5061087 (19045.6036) or later.
+- Enabled Consumer ESU feature (see below).
+- Administrative account.
+- Internet connectivity.
+- User Region is not geo-blocked (Russia, Belarus, Iran, Cuba, North Korea, Syria, Sudan, Venezuela)
+
+______________________________
+
+Design
+------
+
+By default, the script will run in the following order, if a step failed, the next is executed:
+
+- Enroll using Microsoft account currently logged-in as Windows user.
+- Enroll using Microsoft account currently logged-in with Microsoft Store.
+- Enroll using current Local account.
+- Acquire Consumer ESU license manually as last resort.
+
+***Disclaimer:***  
+The "Consumer ESU license" without enrollment is not yet verified to work for installing ESU updates.
+
+Optional Parameters
+-------------------
+
+|Switch    |Effect|
+|----------|------|
+| -Online  | Only enroll using Microsoft user account token, exit if failed |
+| -Store   | Only enroll using Microsoft store account token, exit if failed |
+| -Local   | Only enroll using Local user account token, exit if failed |
+| -License | Force acquire Consumer ESU License regardless or without enrollment |
+| =        | =
+| -Proceed | Force running enrollment, even if Eligibility status is already enrolled |
+
+- You must only specify **one** switch of the first four switches.
+- Only `-Proceed` switch can be combined with the three enroll switches to re-enroll with a different token.
+
+______________________________
+
+Usage
+-----
+
+- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/main.zip) button at the top to download.
+- Extract all files from the ZIP file.
+- Run `Consumer_ESU_Enrollment_run.cmd` as administrator.
+
+Advanced Usage
+--------------
+
+- Download [Consumer_ESU_Enrollment.ps1](https://github.com/abbodi1406/ConsumerESU/raw/refs/heads/main/Consumer_ESU_Enrollment.ps1) as raw, or download the ZIP and extract the script.
+- Run *`Windows Powershell`* as administrator in the same folder where you located the script, or change location to it using `cd` command.
+- Temporary allow running unsigned scripts:  
+`Set-ExecutionPolicy Bypass -Scope Process -Force`
+- Execute the script (with optional parameters if wanted), examples:  
+`.\Consumer_ESU_Enrollment.ps1`  
+`.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
+`.\Consumer_ESU_Enrollment.ps1 -Local`  
+`.\Consumer_ESU_Enrollment.ps1 -License`
+
+______________________________
+
+Consumer ESU Feature
+--------------------
+
+If the feature is not broadly enabled yet, the script will try to enable it  
+and if succeeded, then you must close Windows Powershell session and run the script again for the changes to take effect.
+
+<details><summary>Manual Reference</summary>
+
+How to enable it manually yourself, this require a reboot to take effect:
+
+- Run *`Command Prompt`* as administrator.
+- Execute the following command:  
+```
+reg.exe add "HKLM\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides" /v 4011992206 /t REG_DWORD /d 2 /f
+```
+- Run *`Windows Powershell`* as administrator.
+- Copy and paste the following commands together as-is, wait for "Task Completed" message:  
+```
+$TN = "ReconcileFeatures"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"; $null = Enable-ScheduledTask $TN $TP
+Start-ScheduledTask $TN $TP; while ((Get-ScheduledTask $TN $TP).State.value__ -eq 4) {start-sleep -sec 1}; "Task Completed"
+#
+$TN = "UsageDataFlushing"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"; $null = Enable-ScheduledTask $TN $TP
+Start-ScheduledTask $TN $TP; while ((Get-ScheduledTask $TN $TP).State.value__ -eq 4) {start-sleep -sec 1}; "Task Completed"
+#
+```
+- **Restart the system**.
+- .
+- Run *`Command Prompt`* as administrator.
+- Execute the following commands:  
+```
+cmd /c ClipESUConsumer.exe -evaluateEligibility
+reg.exe query "HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\ConsumerESU"
+```
+- Verify that the last command shows **ESUEligibility** value as non-zero.  
+if so, proceed to run the powershell script as explained above.
+- If the value is zero `0x0` or does not exist, then the operation is failed, and you have to wait for official broad availability.
+</details>
