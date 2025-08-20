@@ -28,6 +28,33 @@ By default, the script will run in the following order, if a step failed, the ne
 ***Disclaimer:***  
 The "Consumer ESU license" without enrollment is not yet verified to work for installing ESU updates.
 
+______________________________
+
+Usage
+-----
+
+- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
+- Extract all files from the ZIP file.
+- Run `Consumer_ESU_Enrollment_run.cmd` as administrator.
+- If the script enabled the feature and asked to close the session,  
+then close the command prompt window, and then run `Consumer_ESU_Enrollment_run.cmd` as administrator one more time.
+
+Advanced Usage
+--------------
+
+- Download [Consumer_ESU_Enrollment.ps1](https://github.com/abbodi1406/ConsumerESU/raw/refs/heads/master/Consumer_ESU_Enrollment.ps1) as raw, or download the ZIP and extract the script.
+- Run *`Windows Powershell`* as administrator in the same folder where you located the script, or change location to it using `cd` command.
+- Temporary allow running unsigned scripts:  
+`Set-ExecutionPolicy Bypass -Scope Process -Force`
+- Execute the script (with optional parameters if wanted)
+- If the script enabled the feature and asked to close the session,  
+then close the whole Windows Powershell window, and then repeat the same steps above.
+- Examples:  
+`.\Consumer_ESU_Enrollment.ps1`  
+`.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
+`.\Consumer_ESU_Enrollment.ps1 -Local`  
+`.\Consumer_ESU_Enrollment.ps1 -License`
+
 Optional Parameters
 -------------------
 
@@ -42,28 +69,6 @@ Optional Parameters
 
 - You must only specify **one** switch of the first four switches.
 - Only `-Proceed` switch can be combined with the three enroll switches to re-enroll with a different token.
-
-______________________________
-
-Usage
------
-
-- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
-- Extract all files from the ZIP file.
-- Run `Consumer_ESU_Enrollment_run.cmd` as administrator.
-
-Advanced Usage
---------------
-
-- Download [Consumer_ESU_Enrollment.ps1](https://github.com/abbodi1406/ConsumerESU/raw/refs/heads/master/Consumer_ESU_Enrollment.ps1) as raw, or download the ZIP and extract the script.
-- Run *`Windows Powershell`* as administrator in the same folder where you located the script, or change location to it using `cd` command.
-- Temporary allow running unsigned scripts:  
-`Set-ExecutionPolicy Bypass -Scope Process -Force`
-- Execute the script (with optional parameters if wanted), examples:  
-`.\Consumer_ESU_Enrollment.ps1`  
-`.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
-`.\Consumer_ESU_Enrollment.ps1 -Local`  
-`.\Consumer_ESU_Enrollment.ps1 -License`
 
 ______________________________
 
