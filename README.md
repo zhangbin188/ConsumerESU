@@ -11,7 +11,7 @@ Requirements
 - Enabled Consumer ESU feature (see below).
 - Administrative account.
 - Internet connectivity.
-- User Region is not geo-blocked (Russia, Belarus, Iran, Cuba, North Korea, Syria, Sudan, Venezuela)
+- User Region is not geo-blocked (Russia, Belarus, Iran, Cuba, North Korea, Syria, Sudan, Ukraine, Venezuela).
 
 ______________________________
 
@@ -108,4 +108,32 @@ reg.exe query "HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Windows\Consume
 - Verify that the last command shows **ESUEligibility** value as non-zero.  
 if so, proceed to run the powershell script as explained above.
 - If the value is zero `0x0` or does not exist, then the operation is failed, and you have to wait for official broad availability.
+</details>
+
+______________________________
+
+Bypass Region Block
+-------------------
+
+<details><summary>Click to expand</summary>
+
+- Temporary change your region to non-blocked country:
+
+Table of Geographical Locations:  
+https://learn.microsoft.com/en-us/windows/win32/intl/table-of-geographical-locations
+
+manually:  
+`Settings > Time & Language > Region > Country or region`
+
+or run *`Windows Powershell`* and execute:  
+`Set-WinHomeLocation -GeoId 244`
+
+- Run the script to enroll as explained above.
+
+- Verify that "ESU Eligibility state" is `DeviceEnrolled / SUCCESS`.
+
+- Run *`Command Prompt`* as administrator, and execute the following to disable ESU evaluation scheduled task:  
+`SCHTASKS /Change /DISABLE /TN "\Microsoft\Windows\Clip\ClipESUConsumer"`
+
+- Restore your original region location, manually or using powershell as before.
 </details>
