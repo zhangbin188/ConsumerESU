@@ -1,7 +1,10 @@
 Consumer ESU Enrollment
 =======================
 
-Windows Powershell script to enroll in Windows 10 Consumer Extended Security Updates (ESU) program via the free Backup option, with or without Microsoft Account.
+Windows Powershell script to enroll in Windows 10 Consumer Extended Security Updates (ESU) program via the free Backup option, **with** or **without** Microsoft Account.
+
+***Remark:***  
+The free `EnrollUsingBackupV1` function does not actually need enabled Backup or online account.
 
 Requirements
 ------------

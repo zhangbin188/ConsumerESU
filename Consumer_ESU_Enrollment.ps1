@@ -87,32 +87,45 @@ if (!(Test-Path "$SysPath\ConsumerESUMgr.dll")) {
 }
 
 #region Globals
-$eeStatus = @(
-	"Unknown",
-	"Ineligible",
-	"Eligible",
-	"DeviceEnrolled",
-	"ReEnrollReq",
-	"MSAEnrolled",
-	"ConsumerESUInactive",
-	"CommercialMigratedDevice",
-	"LoginWithPrimaryAccountToEnroll",
-	"LoginWithPrimaryAccountToCompletePreOrder"
-)
-$eeResult = @(
-	"UNKNOWN_ESU_ELIGIBILITY_RESULT",
-	"SUCCESS",
-	"CONSUMER_ESU_PROGRAM_NOT_ACTIVE",
-	"NON_CONSUMER_DEVICE",
-	"COMMERCIAL_DEVICE",
-	"NON_ADMIN",
-	"CHILD_ACCOUNT",
-	"REGION_IN_EMBARGOED_COUNTRY",
-	"AZURE_DEVICE",
-	"COMMERCIAL_MIGRATED_DEVICE",
-	"LOGIN_WITH_PRIMARY_ACCOUNT_TO_COMPLETE_PREORDER",
-	"UNKNOWN_ESU_ELIGIBILITY_RESULT"
-)
+$eeStatus = @{
+	0 = "Unknown";
+	1 = "Ineligible";
+	2 = "Eligible";
+	3 = "DeviceEnrolled";
+	4 = "ReEnrollReq";
+	5 = "MSAEnrolled";
+	6 = "ConsumerESUInactive";
+	7 = "CommercialMigratedDevice";
+	8 = "LoginWithPrimaryAccountToEnroll";
+	9 = "LoginWithPrimaryAccountToCompletePreOrder";
+}
+$eeResult = @{
+	1 = "SUCCESS";
+	2 = "CONSUMER_ESU_PROGRAM_NOT_ACTIVE";
+	3 = "NON_CONSUMER_DEVICE";
+	4 = "COMMERCIAL_DEVICE";
+	5 = "NON_ADMIN";
+	6 = "CHILD_ACCOUNT";
+	7 = "REGION_IN_EMBARGOED_COUNTRY";
+	8 = "AZURE_DEVICE";
+	9 = "COMMERCIAL_MIGRATED_DEVICE";
+	10 = "LOGIN_WITH_PRIMARY_ACCOUNT_TO_COMPLETE_PREORDER";
+	12 = "KEY_BASED_ESU";
+	13 = "EEA_REGION_POLICY_ENABLED";
+	100 = "UNKNOWN_ERROR";
+	101 = "CONSUMER_ESU_PROGRAM_ACTIVE_CHECK_FAILED";
+	102 = "LICENSE_CHECK_FAILED";
+	103 = "CONSUMER_DEVICE_CHECK_FAILED";
+	104 = "COMMERCIAL_DEVICE_CHECK_FAILED";
+	105 = "ADMIN_CHECK_FAILED";
+	106 = "CHILD_ACCOUNT_CHECK_FAILED";
+	107 = "ENTITLEMENT_CHECK_FAILED";
+	108 = "ELIGIBILITY_EVALUATION_FAILED";
+	109 = "AZURE_DEVICE_CHECK_FAILED";
+	110 = "COMMERCIAL_MIGRATED_DEVICE_CHECK_FAILED";
+	111 = "EMBARGOED_REGION_CHECK_FAILED";
+	112 = "KEY_BASED_ESU_CHECK_FAILED";
+}
 
 $fKey = 'HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides'
 $TN = "ReconcileFeatures"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"
@@ -320,9 +333,9 @@ function EnableFeature
 #region EsuMgr
 function PrintEligibility($esuStatus, $esuResult)
 {
-	$showStatus = ("Unknown", $eeStatus[$esuStatus])[($esuStatus -lt 10)]
+	$showStatus = ("Unknown", $eeStatus[$esuStatus])[($null -ne $eeStatus[$esuStatus])]
 	CONOUT ("Eligibility Status: {0}" -f $showStatus)
-	$showResult = ("UNKNOWN_ERROR", $eeResult[$esuResult])[($esuResult -lt 11)]
+	$showResult = ("UNKNOWN_RESULT", $eeResult[$esuResult])[($null -ne $eeResult[$esuResult])]
 	CONOUT ("Eligibility Result: {0}" -f $showResult)
 }
 
