@@ -462,6 +462,7 @@ if (!$eRet) {
 	CheckEligibility
 	Exit !$eRet
 }
-GetEligibility
+# GetEligibility
+CheckEligibility
 ExitScript 0
 #endregion
