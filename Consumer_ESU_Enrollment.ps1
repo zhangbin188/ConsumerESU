@@ -13,6 +13,9 @@ param (
     $License,
     [Parameter()]
     [switch]
+    $Remove,
+    [Parameter()]
+    [switch]
     $Proceed
 )
 
@@ -21,6 +24,7 @@ param (
 [bool]$bMsAccountStore = $Store.IsPresent
 [bool]$bLocalAccount   = $Local.IsPresent
 [bool]$bAcquireLicense = $License.IsPresent
+[bool]$bRemoveLicense = $Remove.IsPresent
 [bool]$bProceed = $Proceed.IsPresent
 if ($bMsAccountUser) {
 	$bDefault = $false
@@ -45,6 +49,13 @@ if ($bAcquireLicense) {
 	$bMsAccountUser = $false
 	$bMsAccountStore = $false
 	$bLocalAccount = $false
+}
+if ($bRemoveLicense) {
+	$bDefault = $false
+	$bMsAccountUser = $false
+	$bMsAccountStore = $false
+	$bLocalAccount = $false
+	$bAcquireLicense = $false
 }
 
 [bool]$cmdps = $MyInvocation.InvocationName -EQ "&"
@@ -156,6 +167,7 @@ function ComMethods
 	$ICom.SetCustomAttribute($CAB::new([System.Runtime.InteropServices.GuidAttribute].GetConstructor(@([String])), @('90E2000C-B946-42FA-892F-94506F30CA4F')))
 	$ICom.SetCustomAttribute($CAB::new([System.Runtime.InteropServices.InterfaceTypeAttribute].GetConstructor(@([Int16])), @([Int16]1)))
 	[void]$ICom.DefineMethod('EnsureLicenseForApplicationDeployment', 'Public, Virtual, HideBySig, NewSlot, Abstract', 'Standard, HasThis', [Int32], @([String], [String], [String]))
+	[void]$ICom.DefineMethod('RemoveLicensesForInstalledPackage', 1478, 33, [Int32], @([String], [UInt32]))
 	$IALM = $ICom.CreateType()
 
 	$ICom = $Module.DefineType('LicenseManager.IOperatingSystemLicenseManager', 4257)
@@ -188,6 +200,30 @@ function DoAcquireLicense
 	$parameters = 'b58e6308-bb55-e064-03ec-f6a5b029056e', $null
 	$hRet = $IOLM.GetMethod("ActivateLicenseForContent").Invoke($ComObj, $parameters)
 	if ($hRet -ne 0) {return $FALSE}
+
+	return $TRUE
+}
+
+function DoRemoveLicense
+{
+	try {
+		. ComMethods
+		$ComObj = [Activator]::CreateInstance([Type]::GetTypeFromCLSID("22F5B1DF-7D7A-4D21-97F8-C21AEFBA859C"))
+	} catch {
+		return $FALSE
+	}
+
+	$pProxy = $Marshal::GetComInterfaceForObject($ComObj, $IALM)
+	$hRet = $Win32::CoSetProxyBlanket($pProxy, 0xFFFFFFFFL, 0xFFFFFFFFL, 0, 0, 3, 0, 0x40)
+	if ($hRet -ne 0) {return $FALSE}
+	$parameters = 'Microsoft.Windows10ConsumerExtendedSecurityUpdates_1.0.0.0_neutral_~_8wekyb3d8bbwe', [UInt32]3
+	try {
+		$hRet = $IALM.GetMethod("RemoveLicensesForInstalledPackage").Invoke($ComObj, $parameters)
+		if ($hRet -ne 0) {return $FALSE}
+	} catch {
+		$host.UI.WriteLine('Red', 'Black', $_.Exception.Message + $_.ErrorDetails.Message)
+		return $FALSE
+	}
 
 	return $TRUE
 }
@@ -396,6 +432,22 @@ function RunAcquireLicense
 	CheckEligibility
 	Exit !$bRet
 }
+
+function RunRemoveLicense
+{
+	CONOUT "`nRemove Consumer ESU License if exists..."
+	$bRet = DoRemoveLicense
+	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
+	CheckEligibility
+	Exit !$bRet
+}
+#endregion
+
+#region Unlicense
+if ($bRemoveLicense) {
+	. NativeMethods
+	RunRemoveLicense
+}
 #endregion
 
 #region CheckFeature
@@ -411,7 +463,7 @@ if ($hRet -eq 0x80080002 -And $null -eq ((Get-ItemProperty $fKey '4011992206' -E
 	$fRet = EnableFeature
 	if ($fRet) {
 		CONOUT "`nOperation completed successfully."
-		CONOUT "Close Windows Powershell session and run the script again to take effect."
+		CONOUT "Close this console session and run the script again to take effect."
 		ExitScript 0
 	}
 	if ($enablesvc) {RevertService}

@@ -56,7 +56,8 @@ then close the whole Windows Powershell window, and then repeat the same steps a
 `.\Consumer_ESU_Enrollment.ps1`  
 `.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
 `.\Consumer_ESU_Enrollment.ps1 -Local`  
-`.\Consumer_ESU_Enrollment.ps1 -License`
+`.\Consumer_ESU_Enrollment.ps1 -License`  
+`.\Consumer_ESU_Enrollment.ps1 -Remove`
 
 Optional Parameters
 -------------------
@@ -67,10 +68,11 @@ Optional Parameters
 | -Store   | Only enroll using Microsoft store account token, exit if failed |
 | -Local   | Only enroll using Local user account token, exit if failed |
 | -License | Force acquire Consumer ESU License regardless or without enrollment |
+| -Remove  | Remove Consumer ESU License if exists |
 | =        | =
 | -Proceed | Force running enrollment, even if Eligibility status is already enrolled |
 
-- You must only specify **one** switch of the first four switches.
+- You must only specify **one** switch of the first five switches.
 - Only `-Proceed` switch can be combined with the three enroll switches to re-enroll with a different token.
 
 ______________________________
