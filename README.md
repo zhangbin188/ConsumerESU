@@ -45,19 +45,34 @@ then close the command prompt window, and then run `Consumer_ESU_Enrollment_run.
 Advanced Usage
 --------------
 
-- Download [Consumer_ESU_Enrollment.ps1](https://github.com/abbodi1406/ConsumerESU/raw/refs/heads/master/Consumer_ESU_Enrollment.ps1) as raw, or download the ZIP and extract the script.
-- Run *`Windows Powershell`* as administrator in the same folder where you located the script, or change location to it using `cd` command.
+***Command Prompt:***  
+- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
+- Extract all files from the ZIP file.
+- Run *`Command Prompt`* as administrator in the same folder where you located the extracted files, or change location to it using `cd /d` command.
+- Execute `Consumer_ESU_Enrollment_run.cmd` with the wanted optional parameters
+- Examples:  
+`Consumer_ESU_Enrollment_run.cmd -Store -Proceed`  
+`Consumer_ESU_Enrollment_run.cmd -Local`  
+`Consumer_ESU_Enrollment_run.cmd -License`  
+`Consumer_ESU_Enrollment_run.cmd -Remove`
+- If the script enabled the feature and asked to close the session,  
+then close the whole Command Prompt window, and then repeat the same steps above.
+
+***Windows Powershell:***  
+- Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
+- Extract all files from the ZIP file.
+- Run *`Windows Powershell`* as administrator in the same folder where you located the extracted files, or change location to it using `cd` command.
 - Temporary allow running unsigned scripts:  
 `Set-ExecutionPolicy Bypass -Scope Process -Force`
-- Execute the script (with optional parameters if wanted)
-- If the script enabled the feature and asked to close the session,  
-then close the whole Windows Powershell window, and then repeat the same steps above.
+- Execute `Consumer_ESU_Enrollment.ps1` (with optional parameters if wanted)
 - Examples:  
 `.\Consumer_ESU_Enrollment.ps1`  
 `.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
 `.\Consumer_ESU_Enrollment.ps1 -Local`  
 `.\Consumer_ESU_Enrollment.ps1 -License`  
 `.\Consumer_ESU_Enrollment.ps1 -Remove`
+- If the script enabled the feature and asked to close the session,  
+then close the whole Windows Powershell window, and then repeat the same steps above.
 
 Optional Parameters
 -------------------
