@@ -143,6 +143,8 @@ $TN = "ReconcileFeatures"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"
 $svc = 'DiagTrack'
 $enablesvc = $false
 try {$obj = Get-Service $svc -EA 1; $enablesvc = ($obj.StartType.value__ -eq 4)} catch {}
+$featueESU = $false
+$featueEEA = $false
 
 function NativeMethods
 {
@@ -150,6 +152,8 @@ function NativeMethods
 	$t.DefinePInvokeMethod('EnrollUsingBackupV1', 'consumeresumgr.dll', 22, 1, [Int32], @([Boolean].MakeByRefType(), [String], [Int32]), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('GetESUEligibilityStatusV1', 'consumeresumgr.dll', 22, 1, [Int32], @([UInt32].MakeByRefType(), [UInt32].MakeByRefType(), [String], [Int32]), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('CoSetProxyBlanket', 'ole32.dll', 22, 1, [Int32], @([IntPtr], [UInt32], [UInt32], [UInt32], [UInt32], [UInt32], [IntPtr], [UInt32]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlQueryFeatureConfiguration', 'ntdll.dll', 22, 1, [Int32], @([UInt32], [UInt32], [UInt64].MakeByRefType(), [UInt32[]]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlQueryFeatureConfigurationChangeStamp', 'ntdll.dll', 22, 1, [UInt64], @(), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlSetFeatureConfigurations', 'ntdll.dll', 22, 1, [Int32], @([UInt64].MakeByRefType(), [UInt32], [Byte[]], [Int32]), 1, 3).SetImplementationFlags(128)
 	$Win32 = $t.CreateType()
 }
@@ -345,9 +349,45 @@ function EnableFeature
 	}
 
 	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]57517687) + [BitConverter]::GetBytes(10) + [BitConverter]::GetBytes(2) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
-	[UInt64]$stamp = 0
+	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {UInt64]$fccs = 0}
 	try {
-		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$stamp, 1, $fcon, 1)
+		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
+		if ($nRet -lt 0) {
+			CONOUT ("Operation Failed: 0x" + ($nRet + 0x100000000L).ToString("X"))
+			return $FALSE
+		}
+	} catch {
+		$host.UI.WriteLine('Red', 'Black', $_.Exception.Message + $_.ErrorDetails.Message)
+		return $FALSE
+	}
+
+	if ($null -ne $task) {
+		RunTask
+	} else {
+		RevertService
+	}
+	return $TRUE
+}
+
+function DisableFeature
+{
+	if ($null -eq (Get-ItemProperty $fKey -EA 0)) {
+		New-Item $fKey -Force -EA 0
+	}
+	$null = New-ItemProperty $fKey '2642149007' -Value 1 -Type DWord -Force -EA 0
+
+	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {}
+
+	if ($null -ne $task) {
+		RunTask
+	} else {
+		RunService
+	}
+
+	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]58755790) + [BitConverter]::GetBytes(10) + [BitConverter]::GetBytes(1) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
+	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {UInt64]$fccs = 0}
+	try {
+		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
 		if ($nRet -lt 0) {
 			CONOUT ("Operation Failed: 0x" + ($nRet + 0x100000000L).ToString("X"))
 			return $FALSE
@@ -451,22 +491,30 @@ if ($bRemoveLicense) {
 #endregion
 
 #region CheckFeature
+. NativeMethods
 try {
-	. NativeMethods
-	$hRet = $Win32::GetESUEligibilityStatusV1([ref]$null, [ref]$null, [NullString]::Value, 0)
+	$fInfo = [UInt32[]]::new(3)
+	$nRet = $Win32::RtlQueryFeatureConfiguration(57517687L, 1, [ref]$null, $fInfo)
+	if ($nRet -eq 0) {
+		$featueESU = (($fInfo[1] -band 0x30) -shr 4) -eq 2
+	}
 } catch {
-	$host.UI.WriteLine('Red', 'Black', $_.Exception.Message + $_.ErrorDetails.Message)
-	ExitScript 1
 }
-if ($hRet -eq 0x80080002 -And $null -eq ((Get-ItemProperty $fKey '4011992206' -EA 0).4011992206)) {
+try {
+	$fInfo = [UInt32[]]::new(3)
+	$nRet = $Win32::RtlQueryFeatureConfiguration(58755790L, 1, [ref]$null, $fInfo)
+	if ($nRet -eq 0) {
+		$featueEEA = (($fInfo[1] -band 0x30) -shr 4) -eq 2
+	}
+} catch {
+}
+if (!$featueESU) {
 	CONOUT "`nEnabling Consumer ESU feature..."
 	$fRet = EnableFeature
-	if ($fRet) {
-		CONOUT "`nOperation completed successfully."
-		CONOUT "Close this console session and run the script again to take effect."
-		ExitScript 0
-	}
-	if ($enablesvc) {RevertService}
+}
+if ($featueEEA) {
+	CONOUT "`nDisabling EEA_REGION_POLICY_ENABLED feature..."
+	$fRet = DisableFeature
 }
 
 try {
@@ -477,7 +525,8 @@ try {
 }
 if ($hRet -eq 0x80080002) {
 	CONOUT "==== ERROR ====`r`n"
-	CONOUT "Consumer ESU feature is not broadly enabled: E_CONSUMER_ESU_FEATURE_DISABLED"
+	CONOUT "Consumer ESU feature is still not enabled: E_CONSUMER_ESU_FEATURE_DISABLED"
+	CONOUT "Close this console session and run the script again to take effect."
 	ExitScript 1
 }
 #endregion

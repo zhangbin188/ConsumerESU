@@ -56,7 +56,7 @@ Advanced Usage
 `Consumer_ESU_Enrollment_run.cmd -License`  
 `Consumer_ESU_Enrollment_run.cmd -Remove`
 - If the script enabled the feature and asked to close the session,  
-then close the whole Command Prompt window, and then repeat the same steps above.
+then close the whole Command Prompt window, and repeat the same steps above.
 
 ***Windows Powershell:***  
 - Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
@@ -72,7 +72,7 @@ then close the whole Command Prompt window, and then repeat the same steps above
 `.\Consumer_ESU_Enrollment.ps1 -License`  
 `.\Consumer_ESU_Enrollment.ps1 -Remove`
 - If the script enabled the feature and asked to close the session,  
-then close the whole Windows Powershell window, and then repeat the same steps above.
+then close the whole Windows Powershell window, and repeat the same steps above.
 
 Optional Parameters
 -------------------
