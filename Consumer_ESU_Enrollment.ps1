@@ -138,13 +138,27 @@ $eeResult = @{
 	112 = "KEY_BASED_ESU_CHECK_FAILED";
 }
 
-$fKey = 'HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides'
+$fKey10 = 'HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides'
+$fKey08 = 'HKLM:\SYSTEM\CurrentControlSet\Control\FeatureManagement\Overrides\8'
 $TN = "ReconcileFeatures"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"
 $svc = 'DiagTrack'
 $enablesvc = $false
 try {$obj = Get-Service $svc -EA 1; $enablesvc = ($obj.StartType.value__ -eq 4)} catch {}
 $featueESU = $false
 $featueEEA = $false
+
+$gKey = "HKCU:\Control Panel\International\Geo"
+$rKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion"
+$GeoId = (Get-ItemProperty $gKey "Nation" -EA 0).Nation
+$GeoCN = (Get-ItemProperty $gKey "Name" -EA 0).Name
+if ($null -eq $GeoCN) {try {$GeoCN = [Windows.System.UserProfile.GlobalizationPreferences,Windows,ContentType=WindowsRuntime]::HomeGeographicRegion} catch {}}
+$jPath = "$SysPath\IntegratedServicesRegionPolicySet.json"
+$DMA_SSO = $false
+if (Test-Path $jPath) {
+	$jData = Get-Content $jPath | ConvertFrom-Json
+	$jList = ($jData.policies | where {$_.guid.Contains("1d290cdb-499c-4d42-938a-9b8dceffe998")}).conditions.region.disabled
+	$DMA_SSO = $jList -contains $GeoCN
+}
 
 function NativeMethods
 {
@@ -333,12 +347,21 @@ function RunTask
 	Start-ScheduledTask $TN $TP; while ((Get-ScheduledTask $TN $TP).State.value__ -eq 4) {start-sleep -sec 1}
 }
 
-function EnableFeature
+function SetConfig($fID, $fState, $fReg)
 {
-	if ($null -eq (Get-ItemProperty $fKey -EA 0)) {
-		New-Item $fKey -Force -EA 0
+	if ($fState -eq 2) {
+		$fPriority = 10
+		if ($null -eq (Get-ItemProperty $fKey10 -EA 0)) {$null = New-Item $fKey10 -Force -EA 0}
+		$null = New-ItemProperty $fKey10 $fReg -Value $fState -Type DWord -Force -EA 0
+	} else {
+		$fPriority = 8
+		if ($null -eq (Get-ItemProperty $fKey08 -EA 0)) {$null = New-Item $fKey08 -Force -EA 0}
+		$fKeySub = $fKey08 + '\' + $fReg
+		$null = New-Item $fKeySub -Force -EA 0
+		$null = New-ItemProperty $fKeySub 'EnabledState' -Value $fState -Type DWord -Force -EA 0
+		$null = New-ItemProperty $fKeySub 'EnabledStateOptions' -Value 0 -Type DWord -Force -EA 0
+		if ($null -ne (Get-ItemProperty $fKey10 $fReg -EA 0)) {$null = Remove-ItemProperty $fKey10 $fReg -Force -EA 0}
 	}
-	$null = New-ItemProperty $fKey '4011992206' -Value 2 -Type DWord -Force -EA 0
 
 	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {}
 
@@ -348,17 +371,17 @@ function EnableFeature
 		RunService
 	}
 
-	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]57517687) + [BitConverter]::GetBytes(10) + [BitConverter]::GetBytes(2) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
+	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes($fState) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
 	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {UInt64]$fccs = 0}
 	try {
 		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
 		if ($nRet -lt 0) {
 			CONOUT ("Operation Failed: 0x" + ($nRet + 0x100000000L).ToString("X"))
-			return $FALSE
+			return
 		}
 	} catch {
 		$host.UI.WriteLine('Red', 'Black', $_.Exception.Message + $_.ErrorDetails.Message)
-		return $FALSE
+		return
 	}
 
 	if ($null -ne $task) {
@@ -366,43 +389,22 @@ function EnableFeature
 	} else {
 		RevertService
 	}
-	return $TRUE
+	return
 }
 
-function DisableFeature
+function QueryConfig($fID)
 {
-	if ($null -eq (Get-ItemProperty $fKey -EA 0)) {
-		New-Item $fKey -Force -EA 0
-	}
-	$null = New-ItemProperty $fKey '2642149007' -Value 1 -Type DWord -Force -EA 0
-
-	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {}
-
-	if ($null -ne $task) {
-		RunTask
-	} else {
-		RunService
-	}
-
-	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]58755790) + [BitConverter]::GetBytes(10) + [BitConverter]::GetBytes(1) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
-	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {UInt64]$fccs = 0}
 	try {
-		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
-		if ($nRet -lt 0) {
-			CONOUT ("Operation Failed: 0x" + ($nRet + 0x100000000L).ToString("X"))
+		$fInfo = [UInt32[]]::new(3)
+		$nRet = $Win32::RtlQueryFeatureConfiguration([UInt32]$fID, 1, [ref]$null, $fInfo)
+		if ($nRet -eq 0) {
+			return (($fInfo[1] -band 0x30) -shr 4) -eq 2
+		} else {
 			return $FALSE
 		}
 	} catch {
-		$host.UI.WriteLine('Red', 'Black', $_.Exception.Message + $_.ErrorDetails.Message)
 		return $FALSE
 	}
-
-	if ($null -ne $task) {
-		RunTask
-	} else {
-		RevertService
-	}
-	return $TRUE
 }
 #endregion
 
@@ -490,31 +492,17 @@ if ($bRemoveLicense) {
 }
 #endregion
 
-#region CheckFeature
+#region Features
 . NativeMethods
-try {
-	$fInfo = [UInt32[]]::new(3)
-	$nRet = $Win32::RtlQueryFeatureConfiguration(57517687L, 1, [ref]$null, $fInfo)
-	if ($nRet -eq 0) {
-		$featueESU = (($fInfo[1] -band 0x30) -shr 4) -eq 2
-	}
-} catch {
-}
-try {
-	$fInfo = [UInt32[]]::new(3)
-	$nRet = $Win32::RtlQueryFeatureConfiguration(58755790L, 1, [ref]$null, $fInfo)
-	if ($nRet -eq 0) {
-		$featueEEA = (($fInfo[1] -band 0x30) -shr 4) -eq 2
-	}
-} catch {
-}
+$featueESU = QueryConfig 57517687
+$featueEEA = QueryConfig 58755790
 if (!$featueESU) {
 	CONOUT "`nEnabling Consumer ESU feature..."
-	$fRet = EnableFeature
+	SetConfig 57517687 2 "4011992206"
 }
 if ($featueEEA) {
 	CONOUT "`nDisabling EEA_REGION_POLICY_ENABLED feature..."
-	$fRet = DisableFeature
+	SetConfig 58755790 1 "2642149007"
 }
 
 try {
@@ -548,7 +536,15 @@ if ($esuStatus -eq 3 -And $esuResult -eq 1 -And !$bProceed) {
 	ExitScript 0
 }
 
+if ($DMA_SSO) {
+	$null = New-ItemProperty $gKey "Nation" -Value 244 -Type String -Force -EA 0
+	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value 244 -Type DWord -Force -EA 0}
+}
 . ObtainToken
+if ($DMA_SSO) {
+	$null = New-ItemProperty $gKey "Nation" -Value $GeoId -Type String -Force -EA 0
+	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value $GeoId -Type DWord -Force -EA 0}
+}
 
 if ($null -eq $msaToken) {
 	if (!$bDefault) {
