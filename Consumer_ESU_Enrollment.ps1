@@ -525,7 +525,11 @@ if ($bAcquireLicense) {
 }
 
 . CheckEligibility
-if ($null -eq $esuStatus -Or $esuStatus -lt 2 -Or $esuStatus -gt 5) {
+$supported = $false
+if ($null -ne $esuStatus) {
+	$supported = ($esuStatus -ge 2 -Or $esuStatus -le 5) -Or ($esuStatus -eq 1 -And ($esuResult -eq 3 -Or $esuResult -eq 13))
+}
+if (!$supported) {
 	CONOUT "`nEligibility status is not supported for enrollment."
 	CONOUT "Run the script with -License parameter to force acquire license."
 	ExitScript 1
