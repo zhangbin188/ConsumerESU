@@ -109,6 +109,7 @@ $eeStatus = @{
 	7 = "CommercialMigratedDevice";
 	8 = "LoginWithPrimaryAccountToEnroll";
 	9 = "LoginWithPrimaryAccountToCompletePreOrder";
+	10 = "ComingSoon";
 }
 $eeResult = @{
 	1 = "SUCCESS";
@@ -527,7 +528,7 @@ if ($bAcquireLicense) {
 . CheckEligibility
 $supported = $false
 if ($null -ne $esuStatus) {
-	$supported = ($esuStatus -ge 2 -And $esuStatus -le 5) -Or ($esuStatus -eq 1 -And ($esuResult -eq 3 -Or $esuResult -eq 13))
+	$supported = ($esuStatus -ge 2 -And $esuStatus -le 5) -Or (($esuStatus -eq 1 -Or $esuStatus -eq 10) -And ($esuResult -eq 3 -Or $esuResult -eq 13))
 }
 if (!$supported) {
 	CONOUT "`nEligibility status is not supported for enrollment."
