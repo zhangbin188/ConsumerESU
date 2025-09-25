@@ -110,6 +110,10 @@ $eeStatus = @{
 	8 = "LoginWithPrimaryAccountToEnroll";
 	9 = "LoginWithPrimaryAccountToCompletePreOrder";
 	10 = "ComingSoon";
+	11 = "EEAFreeMSAEnrolled";
+	12 = "EEAPaidMSAEnrolled";
+	13 = "WarnInactiveMSA";
+	14 = "ReEnrollReqInactiveMSA";
 }
 $eeResult = @{
 	1 = "SUCCESS";
@@ -122,8 +126,11 @@ $eeResult = @{
 	8 = "AZURE_DEVICE";
 	9 = "COMMERCIAL_MIGRATED_DEVICE";
 	10 = "LOGIN_WITH_PRIMARY_ACCOUNT_TO_COMPLETE_PREORDER";
+	11 = "CONSUMER_ESU_FEATURE_DISABLED";
 	12 = "KEY_BASED_ESU";
 	13 = "EEA_REGION_POLICY_ENABLED";
+	14 = "WARN_INACTIVE_MSA";
+	15 = "REENROLL_REQ_INACTIVE_MSA";
 	100 = "UNKNOWN_ERROR";
 	101 = "CONSUMER_ESU_PROGRAM_ACTIVE_CHECK_FAILED";
 	102 = "LICENSE_CHECK_FAILED";
@@ -137,6 +144,7 @@ $eeResult = @{
 	110 = "COMMERCIAL_MIGRATED_DEVICE_CHECK_FAILED";
 	111 = "EMBARGOED_REGION_CHECK_FAILED";
 	112 = "KEY_BASED_ESU_CHECK_FAILED";
+	113 = "FREE_MSA_ELIGIBILITY_CHECK_FAILED";
 }
 
 $fKey10 = 'HKLM:\SYSTEM\CurrentControlSet\Policies\Microsoft\FeatureManagement\Overrides'
@@ -344,6 +352,7 @@ function RunService
 
 function RunTask
 {
+	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {return}
 	$null = Enable-ScheduledTask $TN $TP
 	Start-ScheduledTask $TN $TP; while ((Get-ScheduledTask $TN $TP).State.value__ -eq 4) {start-sleep -sec 1}
 }
@@ -364,13 +373,8 @@ function SetConfig($fID, $fState, $fReg)
 		if ($null -ne (Get-ItemProperty $fKey10 $fReg -EA 0)) {$null = Remove-ItemProperty $fKey10 $fReg -Force -EA 0}
 	}
 
-	try {$task = Get-ScheduledTask $TN $TP -ErrorAction Stop} catch {}
-
-	if ($null -ne $task) {
-		RunTask
-	} else {
-		RunService
-	}
+	RunService
+	RunTask
 
 	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes($fState) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
 	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {UInt64]$fccs = 0}
@@ -385,11 +389,8 @@ function SetConfig($fID, $fState, $fReg)
 		return
 	}
 
-	if ($null -ne $task) {
-		RunTask
-	} else {
-		RevertService
-	}
+	RunTask
+	RevertService
 	return
 }
 
@@ -496,13 +497,13 @@ if ($bRemoveLicense) {
 #region Features
 . NativeMethods
 $featueESU = QueryConfig 57517687
-$featueEEA = QueryConfig 58755790
 if (!$featueESU) {
 	CONOUT "`nEnabling Consumer ESU feature..."
 	SetConfig 57517687 2 "4011992206"
 }
+$featueEEA = QueryConfig 58755790
 if ($featueEEA) {
-	CONOUT "`nDisabling EEA_REGION_POLICY_ENABLED feature..."
+	CONOUT "`nDisabling EEA_REGION_POLICY_CHECK feature..."
 	SetConfig 58755790 1 "2642149007"
 }
 

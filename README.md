@@ -100,6 +100,7 @@ and if succeeded, then you must close Windows Powershell session and run the scr
 
 <details><summary>Manual Reference</summary>
 
+
 How to enable it manually yourself, this require a reboot to take effect:
 
 - Run *`Command Prompt`* as administrator.
@@ -136,6 +137,7 @@ Bypass Region Block
 -------------------
 
 <details><summary>Click to expand</summary>
+
 
 - Temporary change your region to non-blocked country:
 
