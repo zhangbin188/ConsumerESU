@@ -153,8 +153,7 @@ $TN = "ReconcileFeatures"; $TP = "\Microsoft\Windows\Flighting\FeatureConfig\"
 $svc = 'DiagTrack'
 $enablesvc = $false
 try {$obj = Get-Service $svc -EA 1; $enablesvc = ($obj.StartType.value__ -eq 4)} catch {}
-$featueESU = $false
-$featueEEA = $false
+$featureESU = $false
 
 $gKey = "HKCU:\Control Panel\International\Geo"
 $rKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion"
@@ -496,14 +495,14 @@ if ($bRemoveLicense) {
 
 #region Features
 . NativeMethods
-$featueESU = QueryConfig 57517687
-if (!$featueESU) {
+$featureESU = QueryConfig 57517687
+if (!$featureESU) {
 	CONOUT "`nEnabling Consumer ESU feature..."
 	SetConfig 57517687 2 "4011992206"
 }
-$featueEEA = QueryConfig 58755790
-if ($featueEEA) {
+if ($DMA_SSO) {
 	CONOUT "`nDisabling EEA_REGION_POLICY_CHECK feature..."
+	SetConfig 58992578 1 "2216818319"
 	SetConfig 58755790 1 "2642149007"
 }
 
@@ -529,14 +528,14 @@ if ($bAcquireLicense) {
 . CheckEligibility
 $supported = $false
 if ($null -ne $esuStatus) {
-	$supported = ($esuStatus -ge 2 -And $esuStatus -le 5) -Or (($esuStatus -eq 1 -Or $esuStatus -eq 10) -And ($esuResult -eq 3 -Or $esuResult -eq 13))
+	$supported = ($esuStatus -ge 2 -And $esuStatus -le 5) -Or ($esuStatus -ge 11 -And $esuStatus -le 14) -Or (($esuStatus -eq 1 -Or $esuStatus -eq 10) -And ($esuResult -ge 13 -And $esuResult -le 15))
 }
 if (!$supported) {
 	CONOUT "`nEligibility status is not supported for enrollment."
 	CONOUT "Run the script with -License parameter to force acquire license."
 	ExitScript 1
 }
-if ($esuStatus -eq 3 -And $esuResult -eq 1 -And !$bProceed) {
+if ($esuResult -eq 1 -And ($esuStatus -eq 3 -Or $esuStatus -eq 11 -Or $esuStatus -eq 12) -And !$bProceed) {
 	CONOUT "`nYour PC is already enrolled for Consumer ESU."
 	CONOUT "No need to proceed."
 	ExitScript 0

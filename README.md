@@ -154,7 +154,8 @@ or run *`Windows Powershell`* and execute:
 
 - Verify that "ESU Eligibility state" is `DeviceEnrolled / SUCCESS`.
 
-- Run *`Command Prompt`* as administrator, and execute the following to disable ESU evaluation scheduled task:  
+- Run *`Command Prompt`* as administrator, and execute the following to disable ESU evaluation scheduled task:
+
 `SCHTASKS /Change /DISABLE /TN "\Microsoft\Windows\Clip\ClipESUConsumer"`
 
 - Restore your original region location, manually or using powershell as before.
