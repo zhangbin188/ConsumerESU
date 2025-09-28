@@ -9,7 +9,7 @@ The free `EnrollUsingBackupV1` function does not actually need enabled Backup or
 Requirements
 ------------
 
-- [Consumer ESU Prerequisites](https://web.archive.org/web/20250727070928/https://support.microsoft.com/en-us/windows/windows-10-consumer-extended-security-updates-esu-program-33e17de9-36b3-43bb-874d-6c53d2e4bf42).
+- [Consumer ESU Prerequisites](https://www.microsoft.com/windows/extended-security-updates) ([Old page](https://web.archive.org/web/20250727070928/https://support.microsoft.com/en-us/windows/windows-10-consumer-extended-security-updates-esu-program-33e17de9-36b3-43bb-874d-6c53d2e4bf42)).
 - Cumulative Update 2025-07 KB5061087 (19045.6036) or later.
 - Enabled Consumer ESU feature (see below).
 - Administrative account.

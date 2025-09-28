@@ -335,7 +335,7 @@ function RevertService
 {
 	if ($enablesvc) {
 		try {Set-Service $svc -StartupType Disabled -EA 1} catch {}
-		try {Stop-Service $svc -Force -Confirm -EA 1} catch {}
+		try {Stop-Service $svc -Force -Confirm:$false -EA 1} catch {}
 	}
 }
 
@@ -389,7 +389,6 @@ function SetConfig($fID, $fState, $fReg)
 	}
 
 	RunTask
-	RevertService
 	return
 }
 
@@ -505,6 +504,9 @@ if ($DMA_SSO) {
 	SetConfig 58992578 1 "2216818319"
 	SetConfig 58755790 1 "2642149007"
 	SetConfig 59064570 1 "4109366415"
+}
+if ($enablesvc) {
+	RevertService
 }
 
 try {
