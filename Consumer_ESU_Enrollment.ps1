@@ -469,7 +469,7 @@ function DoEnroll
 
 function RunAcquireLicense
 {
-	CONOUT "`nAcquire Consumer ESU License regardless enrollment..."
+	CONOUT "`nAcquire Consumer ESU License regardless enrollment ..."
 	$bRet = DoAcquireLicense
 	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
 	CheckEligibility
@@ -478,7 +478,7 @@ function RunAcquireLicense
 
 function RunRemoveLicense
 {
-	CONOUT "`nRemove Consumer ESU License if exists..."
+	CONOUT "`nRemove Consumer ESU License if exists ..."
 	$bRet = DoRemoveLicense
 	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
 	CheckEligibility
@@ -497,13 +497,14 @@ if ($bRemoveLicense) {
 . NativeMethods
 $featureESU = QueryConfig 57517687
 if (!$featureESU) {
-	CONOUT "`nEnabling Consumer ESU feature..."
+	CONOUT "`nEnable Consumer ESU feature ..."
 	SetConfig 57517687 2 "4011992206"
 }
 if ($DMA_SSO) {
-	CONOUT "`nDisabling EEA_REGION_POLICY_CHECK feature..."
+	CONOUT "`nDisable EEA_REGION_POLICY_CHECK features ..."
 	SetConfig 58992578 1 "2216818319"
 	SetConfig 58755790 1 "2642149007"
+	SetConfig 59064570 1 "4109366415"
 }
 
 try {
