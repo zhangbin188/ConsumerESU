@@ -29,7 +29,7 @@ By default, the script will run in the following order, if a step failed, the ne
 - Acquire Consumer ESU license manually as last resort.
 
 ***Disclaimer:***  
-The "Consumer ESU license" without enrollment is not yet verified to work for installing ESU updates.
+The last option "Consumer ESU license" without enrollment is not yet verified to work for installing ESU updates.
 
 ______________________________
 
@@ -39,8 +39,6 @@ Usage
 - Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
 - Extract all files from the ZIP file.
 - Run `Consumer_ESU_Enrollment_run.cmd` as administrator.
-- If the script enabled the feature and asked to close the session,  
-then close the command prompt window, and then run `Consumer_ESU_Enrollment_run.cmd` as administrator one more time.
 
 Advanced Usage
 --------------
@@ -55,8 +53,6 @@ Advanced Usage
 `Consumer_ESU_Enrollment_run.cmd -Local`  
 `Consumer_ESU_Enrollment_run.cmd -License`  
 `Consumer_ESU_Enrollment_run.cmd -Remove`
-- If the script enabled the feature and asked to close the session,  
-then close the whole Command Prompt window, and repeat the same steps above.
 
 ***Windows Powershell:***  
 - Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
@@ -71,8 +67,6 @@ then close the whole Command Prompt window, and repeat the same steps above.
 `.\Consumer_ESU_Enrollment.ps1 -Local`  
 `.\Consumer_ESU_Enrollment.ps1 -License`  
 `.\Consumer_ESU_Enrollment.ps1 -Remove`
-- If the script enabled the feature and asked to close the session,  
-then close the whole Windows Powershell window, and repeat the same steps above.
 
 Optional Parameters
 -------------------
@@ -95,8 +89,9 @@ ______________________________
 Consumer ESU Feature
 --------------------
 
-If the feature is not broadly enabled yet, the script will try to enable it  
-and if succeeded, then you must close Windows Powershell session and run the script again for the changes to take effect.
+- If the feature is not broadly enabled yet, the script will try to enable it.
+
+- If the script asked to close the session, then close the whole console window, and run the script again (with same parameters if any).
 
 <details><summary>Manual Reference</summary>
 
