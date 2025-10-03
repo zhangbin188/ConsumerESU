@@ -86,6 +86,16 @@ Optional Parameters
 
 ______________________________
 
+Important Note
+--------------
+
+- Once you successfully got `DeviceEnrolled` status, and to avoid changing or reverting the state,  
+it is recommended to disable all related Consumer ESU scheduled tasks.
+- To do so, run *`Consumer_ESU_ScheduledTasks.cmd`* as administrator, and press 1 to disable them.
+- You can reenable them anytime using 2nd option of the same script.
+
+______________________________
+
 Consumer ESU Feature
 --------------------
 
