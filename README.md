@@ -4,13 +4,13 @@ Consumer ESU Enrollment
 Windows Powershell script to enroll in Windows 10 Consumer Extended Security Updates (ESU) program via the free Backup option, **with** or **without** Microsoft Account.
 
 ***Remark:***  
-The free `EnrollUsingBackupV1` function does not actually need enabled Backup or online account.
+The free `EnrollUsingBackupV1` function accept any account token and does not check any Backup status, regardless what the name suggests.
 
 Requirements
 ------------
 
 - [Consumer ESU Prerequisites](https://www.microsoft.com/windows/extended-security-updates) ([Old page](https://web.archive.org/web/20250727070928/https://support.microsoft.com/en-us/windows/windows-10-consumer-extended-security-updates-esu-program-33e17de9-36b3-43bb-874d-6c53d2e4bf42)).
-- Cumulative Update 2025-07 KB5061087 (19045.6036) or later.
+- Cumulative Update 2025-06 KB5061087 (19045.6036) or later.
 - Enabled Consumer ESU feature (see below).
 - Administrative account.
 - Internet connectivity.
@@ -89,7 +89,8 @@ ______________________________
 Important Note
 --------------
 
-- Once you successfully got `DeviceEnrolled` status, and to avoid changing or reverting the state,  
+- If you only have one user account, once you successfully got `DeviceEnrolled` status,  
+and to avoid changing or reverting the state, specially for EEA or geo-blocked regions,  
 it is recommended to disable all related Consumer ESU scheduled tasks.
 - To do so, run *`Consumer_ESU_ScheduledTasks.cmd`* as administrator, and press 1 to disable them.
 - You can reenable them anytime using 2nd option of the same script.

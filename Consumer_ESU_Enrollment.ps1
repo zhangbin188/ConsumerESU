@@ -93,7 +93,7 @@ if (Test-Path "$env:SystemRoot\Sysnative\reg.exe") {
 if (!(Test-Path "$SysPath\ConsumerESUMgr.dll")) {
 	CONOUT "==== ERROR ====`r`n"
 	CONOUT "ConsumerESUMgr.dll is not detected."
-	CONOUT "Make sure to install update 2025-07 KB5061087 (19045.6036) or later."
+	CONOUT "Make sure to install update 2025-06 KB5061087 (19045.6036) or later."
 	ExitScript 1
 }
 
@@ -472,7 +472,7 @@ function RunAcquireLicense
 	$bRet = DoAcquireLicense
 	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
 	CheckEligibility
-	Exit !$bRet
+	ExitScript !$bRet
 }
 
 function RunRemoveLicense
@@ -481,7 +481,7 @@ function RunRemoveLicense
 	$bRet = DoRemoveLicense
 	CONOUT ("Operation result: " + ("Failure", "Success")[$bRet])
 	CheckEligibility
-	Exit !$bRet
+	ExitScript !$bRet
 }
 #endregion
 
@@ -565,7 +565,7 @@ if ($null -eq $msaToken) {
 $eRet = DoEnroll
 if (!$eRet) {
 	CheckEligibility
-	Exit !$eRet
+	ExitScript !$eRet
 }
 # GetEligibility
 CheckEligibility
