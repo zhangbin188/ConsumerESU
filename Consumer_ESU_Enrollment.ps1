@@ -16,6 +16,9 @@ param (
     $Remove,
     [Parameter()]
     [switch]
+    $Reset,
+    [Parameter()]
+    [switch]
     $Proceed
 )
 
@@ -24,38 +27,23 @@ param (
 [bool]$bMsAccountStore = $Store.IsPresent
 [bool]$bLocalAccount   = $Local.IsPresent
 [bool]$bAcquireLicense = $License.IsPresent
-[bool]$bRemoveLicense = $Remove.IsPresent
+[bool]$bRemoveLicense  = $Remove.IsPresent
+[bool]$bResetFCon      = $Reset.IsPresent
 [bool]$bProceed = $Proceed.IsPresent
 if ($bMsAccountUser) {
 	$bDefault = $false
 	$bMsAccountStore = $false
 	$bLocalAccount = $false
-	$bAcquireLicense = $false
 }
 if ($bMsAccountStore) {
 	$bDefault = $false
 	$bMsAccountUser = $false
 	$bLocalAccount = $false
-	$bAcquireLicense = $false
 }
 if ($bLocalAccount) {
 	$bDefault = $false
 	$bMsAccountUser = $false
 	$bMsAccountStore = $false
-	$bAcquireLicense = $false
-}
-if ($bAcquireLicense) {
-	$bDefault = $false
-	$bMsAccountUser = $false
-	$bMsAccountStore = $false
-	$bLocalAccount = $false
-}
-if ($bRemoveLicense) {
-	$bDefault = $false
-	$bMsAccountUser = $false
-	$bMsAccountStore = $false
-	$bLocalAccount = $false
-	$bAcquireLicense = $false
 }
 
 [bool]$cmdps = $MyInvocation.InvocationName -EQ "&"
@@ -373,7 +361,7 @@ function SetConfig($fID, $fState, $fReg)
 	}
 
 	RunService
-	RunTask
+	#RunTask
 
 	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes($fState) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
 	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {[UInt64]$fccs = 0}
@@ -389,6 +377,38 @@ function SetConfig($fID, $fState, $fReg)
 	}
 
 	RunTask
+	return
+}
+
+function ResetConfig($fID, $fReg)
+{
+	try {
+		$fInfo = [UInt32[]]::new(3)
+		$nRet = $Win32::RtlQueryFeatureConfiguration([UInt32]$fID, 1, [ref]$null, $fInfo)
+		if ($nRet -eq 0) {
+			$fPriority = ($fInfo[1] -band 0xF)
+		} else {
+			return
+		}
+	} catch {
+		return
+	}
+
+	if ($fPriority -ne 10 -And $fPriority -ne 8) {
+		return
+	}
+
+	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(4)
+	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {[UInt64]$fccs = 0}
+	try {
+		$nRet = $Win32::RtlSetFeatureConfigurations([ref]$fccs, 1, $fcon, 1)
+	} catch {
+	}
+
+	if ($null -ne (Get-ItemProperty $fKey10 $fReg -EA 0)) {$null = Remove-ItemProperty $fKey10 $fReg -Force -EA 0}
+	$fKeySub = $fKey08 + '\' + $fReg
+	if ($null -ne (Get-Item $fKeySub -EA 0)) {$null = Remove-Item $fKeySub -Force -EA 0}
+
 	return
 }
 
@@ -485,18 +505,11 @@ function RunRemoveLicense
 }
 #endregion
 
-#region Unlicense
-if ($bRemoveLicense) {
-	. NativeMethods
-	RunRemoveLicense
-}
-#endregion
-
 #region DisabledFunctions
 if ($bAcquireLicense) {
 	CONOUT "`nAcquire License is not possible without enrollment."
 	ExitScript 1
-	RunAcquireLicense
+	#RunAcquireLicense
 }
 
 if ($bLocalAccount) {
@@ -505,8 +518,28 @@ if ($bLocalAccount) {
 }
 #endregion
 
-#region Features
 . NativeMethods
+
+#region Unlicense
+if ($bRemoveLicense) {
+	RunRemoveLicense
+}
+#endregion
+
+#region Features
+if ($bResetFCon) {
+	CONOUT "`nReset Consumer ESU features to default state ..."
+	RunService
+	ResetConfig 57517687 "4011992206"
+	ResetConfig 58992578 "2216818319"
+	ResetConfig 58755790 "2642149007"
+	ResetConfig 59064570 "4109366415"
+	RunTask
+	if ($enablesvc) {RevertService}
+	CheckEligibility
+	ExitScript 0
+}
+
 $featureESU = QueryConfig 57517687
 if (!$featureESU) {
 	CONOUT "`nEnable Consumer ESU feature ..."

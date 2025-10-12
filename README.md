@@ -50,6 +50,7 @@ Advanced Usage
 - Examples:  
 `Consumer_ESU_Enrollment_run.cmd -Store -Proceed`  
 `Consumer_ESU_Enrollment_run.cmd -Remove`
+`Consumer_ESU_Enrollment_run.cmd -Reset`
 
 ***Windows Powershell:***  
 - Click on Code > [Download ZIP](https://github.com/abbodi1406/ConsumerESU/archive/refs/heads/master.zip) button at the top to download.
@@ -62,6 +63,7 @@ Advanced Usage
 `.\Consumer_ESU_Enrollment.ps1`  
 `.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
 `.\Consumer_ESU_Enrollment.ps1 -Remove`
+`.\Consumer_ESU_Enrollment.ps1 -Reset`
 
 Optional Parameters
 -------------------
@@ -71,6 +73,7 @@ Optional Parameters
 | -Online  | Only enroll using Microsoft user account token, exit if failed |
 | -Store   | Only enroll using Microsoft store account token, exit if failed |
 | -Remove  | Remove Consumer ESU License if exists |
+| -Reset   | Reset Consumer ESU features to the default state (if changed by the script) |
 | =        | =
 | -Proceed | Force running enrollment, even if Eligibility status is already enrolled |
 
