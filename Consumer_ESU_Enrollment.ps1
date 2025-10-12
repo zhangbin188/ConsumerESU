@@ -321,7 +321,7 @@ function ObtainToken
 	if ($null -eq $msaToken -And ($bDefault -Or $bMsAccountStore)) {
 		$msaToken = TokenMsAccountStore
 	}
-	if ($null -eq $msaToken -And ($bDefault -Or $bLocalAccount)) {
+	if ($null -eq $msaToken -And ($bLocalAccount)) {
 		$msaToken = TokenLocalAccount
 	}
 	if ($null -eq $msaToken) {
@@ -492,6 +492,19 @@ if ($bRemoveLicense) {
 }
 #endregion
 
+#region DisabledFunctions
+if ($bAcquireLicense) {
+	CONOUT "`nAcquire License is not possible without enrollment."
+	ExitScript 1
+	RunAcquireLicense
+}
+
+if ($bLocalAccount) {
+	CONOUT "`nEnrollment is not possible with Local user account."
+	ExitScript 1
+}
+#endregion
+
 #region Features
 . NativeMethods
 $featureESU = QueryConfig 57517687
@@ -524,10 +537,6 @@ if ($hRet -eq 0x80080002) {
 #endregion
 
 #region Main
-if ($bAcquireLicense) {
-	RunAcquireLicense
-}
-
 . CheckEligibility
 $supported = $false
 if ($null -ne $esuStatus) {
@@ -535,7 +544,7 @@ if ($null -ne $esuStatus) {
 }
 if (!$supported) {
 	CONOUT "`nEligibility status is not supported for enrollment."
-	CONOUT "Run the script with -License parameter to force acquire license."
+	#CONOUT "Run the script with -License parameter to force acquire license."
 	ExitScript 1
 }
 if ($esuResult -eq 1 -And ($esuStatus -eq 3 -Or $esuStatus -eq 11 -Or $esuStatus -eq 12) -And !$bProceed) {
@@ -555,8 +564,10 @@ if ($DMA_SSO) {
 }
 
 if ($null -eq $msaToken) {
+	CONOUT "`nEnrollment is not possible without MSA Token."
+	ExitScript 1
 	if (!$bDefault) {
-		CONOUT "`nRun the script without parameters to obtain other tokens or force acquire license."
+		CONOUT "`nRun the script without parameters to obtain other tokens."
 		ExitScript 1
 	}
 	RunAcquireLicense

@@ -1,10 +1,14 @@
 Consumer ESU Enrollment
 =======================
 
-Windows Powershell script to enroll in Windows 10 Consumer Extended Security Updates (ESU) program via the free Backup option, **with** or **without** Microsoft Account.
+Windows Powershell script to enroll in Windows 10 Consumer Extended Security Updates (ESU) program via the free Backup option, **with** Microsoft Account.
 
-***Remark:***  
-The free `EnrollUsingBackupV1` function accept any account token and does not check any Backup status, regardless what the name suggests.
+***UPDATE 2025-10-12:***  
+------------------------
+
+- Enrollment without Microsoft account is not possible anymore as of 2025-10-08
+- Acquire license without enrollment no longer works as well
+- Already enrolled devices with Local account or License should not be affected by this change
 
 Requirements
 ------------
@@ -25,11 +29,6 @@ By default, the script will run in the following order, if a step failed, the ne
 
 - Enroll using Microsoft account currently logged-in as Windows user.
 - Enroll using Microsoft account currently logged-in with Microsoft Store.
-- Enroll using current Local account.
-- Acquire Consumer ESU license manually as last resort.
-
-***Disclaimer:***  
-The last option "Consumer ESU license" without enrollment is not yet verified to work for installing ESU updates.
 
 ______________________________
 
@@ -50,8 +49,6 @@ Advanced Usage
 - Execute `Consumer_ESU_Enrollment_run.cmd` with the wanted optional parameters
 - Examples:  
 `Consumer_ESU_Enrollment_run.cmd -Store -Proceed`  
-`Consumer_ESU_Enrollment_run.cmd -Local`  
-`Consumer_ESU_Enrollment_run.cmd -License`  
 `Consumer_ESU_Enrollment_run.cmd -Remove`
 
 ***Windows Powershell:***  
@@ -64,8 +61,6 @@ Advanced Usage
 - Examples:  
 `.\Consumer_ESU_Enrollment.ps1`  
 `.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
-`.\Consumer_ESU_Enrollment.ps1 -Local`  
-`.\Consumer_ESU_Enrollment.ps1 -License`  
 `.\Consumer_ESU_Enrollment.ps1 -Remove`
 
 Optional Parameters
@@ -75,14 +70,12 @@ Optional Parameters
 |----------|------|
 | -Online  | Only enroll using Microsoft user account token, exit if failed |
 | -Store   | Only enroll using Microsoft store account token, exit if failed |
-| -Local   | Only enroll using Local user account token, exit if failed |
-| -License | Force acquire Consumer ESU License regardless or without enrollment |
 | -Remove  | Remove Consumer ESU License if exists |
 | =        | =
 | -Proceed | Force running enrollment, even if Eligibility status is already enrolled |
 
-- You must only specify **one** switch of the first five switches.
-- Only `-Proceed` switch can be combined with the three enroll switches to re-enroll with a different token.
+- You must only specify **one** switch of the first two switches.
+- Only `-Proceed` switch can be combined with the two enroll switches to re-enroll with a different token.
 
 ______________________________
 
