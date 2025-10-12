@@ -49,7 +49,7 @@ Advanced Usage
 - Execute `Consumer_ESU_Enrollment_run.cmd` with the wanted optional parameters
 - Examples:  
 `Consumer_ESU_Enrollment_run.cmd -Store -Proceed`  
-`Consumer_ESU_Enrollment_run.cmd -Remove`
+`Consumer_ESU_Enrollment_run.cmd -Remove`  
 `Consumer_ESU_Enrollment_run.cmd -Reset`
 
 ***Windows Powershell:***  
@@ -62,7 +62,7 @@ Advanced Usage
 - Examples:  
 `.\Consumer_ESU_Enrollment.ps1`  
 `.\Consumer_ESU_Enrollment.ps1 -Store -Proceed`  
-`.\Consumer_ESU_Enrollment.ps1 -Remove`
+`.\Consumer_ESU_Enrollment.ps1 -Remove`  
 `.\Consumer_ESU_Enrollment.ps1 -Reset`
 
 Optional Parameters
