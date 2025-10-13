@@ -165,7 +165,6 @@ function NativeMethods
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfiguration', 'ntdll.dll', 22, 1, [Int32], @([UInt32], [UInt32], [UInt64].MakeByRefType(), [UInt32[]]), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfigurationChangeStamp', 'ntdll.dll', 22, 1, [UInt64], @(), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlSetFeatureConfigurations', 'ntdll.dll', 22, 1, [Int32], @([UInt64].MakeByRefType(), [UInt32], [Byte[]], [Int32]), 1, 3).SetImplementationFlags(128)
-	$t.DefinePInvokeMethod('GetUserGeoID', 'Kernel32.dll', 22, 1, [Int32], @([Int32]), 1, 3).SetImplementationFlags(128)
 	$Win32 = $t.CreateType()
 }
 #endregion
@@ -361,9 +360,6 @@ function SetConfig($fID, $fState, $fReg)
 		if ($null -ne (Get-ItemProperty $fKey10 $fReg -EA 0)) {$null = Remove-ItemProperty $fKey10 $fReg -Force -EA 0}
 	}
 
-	RunService
-	#RunTask
-
 	[byte[]]$fcon = [BitConverter]::GetBytes([UInt32]$fID) + [BitConverter]::GetBytes($fPriority) + [BitConverter]::GetBytes($fState) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(0) + [BitConverter]::GetBytes(1)
 	try {[UInt64]$fccs = $Win32::RtlQueryFeatureConfigurationChangeStamp()} catch {[UInt64]$fccs = 0}
 	try {
@@ -377,7 +373,6 @@ function SetConfig($fID, $fState, $fReg)
 		return
 	}
 
-	RunTask
 	return
 }
 
@@ -541,6 +536,7 @@ if ($bResetFCon) {
 	ExitScript 0
 }
 
+RunService
 $featureESU = QueryConfig 57517687
 if (!$featureESU) {
 	CONOUT "`nEnable Consumer ESU feature ..."
@@ -551,6 +547,9 @@ if ($DMA_SSO) {
 	SetConfig 58992578 1 "2216818319"
 	SetConfig 58755790 1 "2642149007"
 	SetConfig 59064570 1 "4109366415"
+}
+if (!$featureESU -Or $DMA_SSO) {
+	RunTask
 }
 if ($enablesvc) {
 	RevertService
@@ -589,19 +588,19 @@ if ($esuResult -eq 1 -And ($esuStatus -eq 3 -Or $esuStatus -eq 11 -Or $esuStatus
 
 if ($DMA_SSO) {
 	$null = New-ItemProperty $gKey "Nation" -Value 244 -Type String -Force -EA 0
-	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value 244 -Type DWord -Force -EA 0}
-	if ((Get-ItemProperty $rKey "DeviceRegion" -EA 0).DeviceRegion -ne 244) {
-		try{$null = Remove-Item $rKey -Force -EA 0} catch {}
-		[void]$Win32::GetUserGeoID(0x10)
+	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {
+		Copy-Item (Get-Command reg.exe).Source .\reg1.exe -Force -EA 0
+		& .\reg1.exe add "$($rKey.Replace(':',''))" /v DeviceRegion /t REG_DWORD /d 244 /f > $null 2>&1
+		Remove-Item .\reg1.exe -Force -EA 0
 	}
 }
 . ObtainToken
 if ($DMA_SSO) {
 	$null = New-ItemProperty $gKey "Nation" -Value $GeoId -Type String -Force -EA 0
-	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value $GeoId -Type DWord -Force -EA 0}
-	if ((Get-ItemProperty $rKey "DeviceRegion" -EA 0).DeviceRegion -ne $GeoId) {
-		try{$null = Remove-Item $rKey -Force -EA 0} catch {}
-		[void]$Win32::GetUserGeoID(0x10)
+	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {
+		Copy-Item (Get-Command reg.exe).Source .\reg1.exe -Force -EA 0
+		& .\reg1.exe add "$($rKey.Replace(':',''))" /v DeviceRegion /t REG_DWORD /d $GeoId /f > $null 2>&1
+		Remove-Item .\reg1.exe -Force -EA 0
 	}
 }
 
