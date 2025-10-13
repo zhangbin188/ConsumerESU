@@ -165,6 +165,7 @@ function NativeMethods
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfiguration', 'ntdll.dll', 22, 1, [Int32], @([UInt32], [UInt32], [UInt64].MakeByRefType(), [UInt32[]]), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfigurationChangeStamp', 'ntdll.dll', 22, 1, [UInt64], @(), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlSetFeatureConfigurations', 'ntdll.dll', 22, 1, [Int32], @([UInt64].MakeByRefType(), [UInt32], [Byte[]], [Int32]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('GetUserGeoID', 'Kernel32.dll', 22, 1, [Int32], @([Int32]), 1, 3).SetImplementationFlags(128)
 	$Win32 = $t.CreateType()
 }
 #endregion
@@ -589,11 +590,19 @@ if ($esuResult -eq 1 -And ($esuStatus -eq 3 -Or $esuStatus -eq 11 -Or $esuStatus
 if ($DMA_SSO) {
 	$null = New-ItemProperty $gKey "Nation" -Value 244 -Type String -Force -EA 0
 	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value 244 -Type DWord -Force -EA 0}
+	if ((Get-ItemProperty $rKey "DeviceRegion" -EA 0).DeviceRegion -ne 244) {
+		try{$null = Remove-Item $rKey -Force -EA 0} catch {}
+		[void]$Win32::GetUserGeoID(0x10)
+	}
 }
 . ObtainToken
 if ($DMA_SSO) {
 	$null = New-ItemProperty $gKey "Nation" -Value $GeoId -Type String -Force -EA 0
 	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {$null = New-ItemProperty $rKey "DeviceRegion" -Value $GeoId -Type DWord -Force -EA 0}
+	if ((Get-ItemProperty $rKey "DeviceRegion" -EA 0).DeviceRegion -ne $GeoId) {
+		try{$null = Remove-Item $rKey -Force -EA 0} catch {}
+		[void]$Win32::GetUserGeoID(0x10)
+	}
 }
 
 if ($null -eq $msaToken) {
