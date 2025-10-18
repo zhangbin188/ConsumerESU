@@ -142,6 +142,7 @@ $svc = 'DiagTrack'
 $enablesvc = $false
 try {$obj = Get-Service $svc -EA 1; $enablesvc = ($obj.StartType.value__ -eq 4)} catch {}
 $featureESU = $false
+$BSD = $false
 
 $gKey = "HKCU:\Control Panel\International\Geo"
 $rKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\DeviceRegion"
@@ -169,6 +170,9 @@ function NativeMethods
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfiguration', 'ntdll.dll', 22, 1, [Int32], @([UInt32], [UInt32], [UInt64].MakeByRefType(), [UInt32[]]), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfigurationChangeStamp', 'ntdll.dll', 22, 1, [UInt64], @(), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlSetFeatureConfigurations', 'ntdll.dll', 22, 1, [Int32], @([UInt64].MakeByRefType(), [UInt32], [Byte[]], [Int32]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlSetSystemBootStatus', 'ntdll.dll', 22, 1, [Int32], @([Int32], [Int32].MakeByRefType(), [Int32], [IntPtr]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlGetSystemBootStatus', 'ntdll.dll', 22, 1, [Int32], @([Int32], [Int32].MakeByRefType(), [Int32], [IntPtr]), 1, 3).SetImplementationFlags(128)
+	$t.DefinePInvokeMethod('RtlCreateBootStatusDataFile', 'ntdll.dll', 22, 1, [Int32], @([String]), 1, 3).SetImplementationFlags(128)
 	$Win32 = $t.CreateType()
 }
 
@@ -333,8 +337,29 @@ function ObtainToken
 #endregion
 
 #region FCon
+function RtlBSD
+{
+	$state = 0
+	try {$nRet = $Win32::RtlGetSystemBootStatus(17, [ref]$state, 4, 0)} catch {return $FALSE}
+	if ($nRet -eq 0 -Or $state -gt 0) {return $TRUE}
+
+	if ($nRet -eq 0xC0000034) {
+		try {$nRet = $Win32::RtlCreateBootStatusDataFile([NullString]::Value)} catch {return $FALSE}
+		if ($nRet -eq 0 -Or $nRet -eq 0xC0000035) {return $TRUE}
+	}
+
+	if ($nRet -eq 0xC0000059) {
+		$state = 0xb0
+		try {$nRet = $Win32::RtlSetSystemBootStatus(0, [ref]$state, 4, 0)} catch {return $FALSE}
+		if ($nRet -eq 0) {return $TRUE}
+	}
+
+	return $FALSE
+}
+
 function RevertService
 {
+	if ($BSD) {return}
 	if ($enablesvc) {
 		try {Set-Service $svc -StartupType Disabled -EA 1} catch {}
 		try {Stop-Service $svc -Force -Confirm:$false -EA 1} catch {}
@@ -343,6 +368,7 @@ function RevertService
 
 function RunService
 {
+	if ($BSD) {return}
 	if ($enablesvc) {
 		try {Set-Service $svc -StartupType Automatic -EA 1} catch {}
 		try {Start-Service $svc -EA 1} catch {}
@@ -529,6 +555,7 @@ if ($bLocalAccount) {
 #endregion
 
 . NativeMethods
+$BSD = RtlBSD
 
 #region Unlicense
 if ($bRemoveLicense) {
@@ -538,14 +565,14 @@ if ($bRemoveLicense) {
 
 #region Features
 if ($bResetFCon) {
-	CONOUT "`nReset Consumer ESU features to default state ..."
+	CONOUT "`nReset Consumer ESU features to the default state ..."
 	RunService
 	ResetConfig 57517687 "4011992206"
 	ResetConfig 58992578 "2216818319"
 	ResetConfig 58755790 "2642149007"
 	ResetConfig 59064570 "4109366415"
 	RunTask
-	if ($enablesvc) {RevertService}
+	RevertService
 	CheckEligibility
 	ExitScript 0
 }
@@ -565,9 +592,7 @@ if ($DMA_SSO) {
 if (!$featureESU -Or $DMA_SSO) {
 	RunTask
 }
-if ($enablesvc) {
-	RevertService
-}
+RevertService
 
 try {
 	$hRet = $Win32::GetESUEligibilityStatusV1([ref]$null, [ref]$null, [NullString]::Value, 0)
@@ -578,7 +603,7 @@ try {
 if ($hRet -eq 0x80080002) {
 	CONOUT "==== ERROR ====`r`n"
 	CONOUT "Consumer ESU feature is still not enabled: E_CONSUMER_ESU_FEATURE_DISABLED"
-	CONOUT "Close this console session and run the script again to take effect."
+	CONOUT "Restart the system and try again."
 	ExitScript 1
 }
 #endregion
