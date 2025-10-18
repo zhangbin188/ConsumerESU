@@ -155,6 +155,10 @@ if (Test-Path $jPath) {
 	$jList = ($jData.policies | where {$_.guid.Contains("1d290cdb-499c-4d42-938a-9b8dceffe998")}).conditions.region.disabled
 	$DMA_SSO = $jList -contains $GeoCN
 }
+$scope = "service::www.microsoft.com::MBI_SSL"
+if ($DMA_SSO) {
+	$scope = $scope + "&ssoappgroup=windows"
+}
 
 function NativeMethods
 {
@@ -166,6 +170,16 @@ function NativeMethods
 	$t.DefinePInvokeMethod('RtlQueryFeatureConfigurationChangeStamp', 'ntdll.dll', 22, 1, [UInt64], @(), 1, 3).SetImplementationFlags(128)
 	$t.DefinePInvokeMethod('RtlSetFeatureConfigurations', 'ntdll.dll', 22, 1, [Int32], @([UInt64].MakeByRefType(), [UInt32], [Byte[]], [Int32]), 1, 3).SetImplementationFlags(128)
 	$Win32 = $t.CreateType()
+}
+
+function ReRegion($gID)
+{
+	$null = New-ItemProperty $gKey "Nation" -Value $gID -Type String -Force -EA 0
+	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {
+		Copy-Item (Get-Command reg.exe).Source .\reg1.exe -Force -EA 0
+		& .\reg1.exe add "$($rKey.Replace(':',''))" /v DeviceRegion /t REG_DWORD /d $gID /f > $null 2>&1
+		Remove-Item .\reg1.exe -Force -EA 0
+	}
 }
 #endregion
 
@@ -259,7 +273,7 @@ function TokenMsAccountUser
 {
 	$provider = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager,Windows,ContentType=WindowsRuntime]::FindAccountProviderAsync("https://login.windows.local", "consumers")) ([Windows.Security.Credentials.WebAccountProvider,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $provider) {return $null}
-	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, "service::www.microsoft.com::MBI_SSL", "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
+	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, $scope, "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
 	if ($null -eq $request) {return $null}
 	$result = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager,Windows,ContentType=WindowsRuntime]::GetTokenSilentlyAsync($request)) ([Windows.Security.Authentication.Web.Core.WebTokenRequestResult,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $result -Or $result.ResponseStatus -ne 0) {return $null}
@@ -277,7 +291,7 @@ function TokenMsAccountStore
 	if ($null -eq $provider) {return $null}
 	$account = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager,Windows,ContentType=WindowsRuntime]::FindAccountAsync($provider, $id)) ([Windows.Security.Credentials.WebAccount,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $account) {return $null}
-	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, "service::www.microsoft.com::MBI_SSL", "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
+	$request = [Windows.Security.Authentication.Web.Core.WebTokenRequest,Windows,ContentType=WindowsRuntime]::new($provider, $scope, "d122d5c5-5240-4164-b88c-986b5f1cf7f9", 0)
 	if ($null -eq $request) {return $null}
 	$result = AwaitOperation ([Windows.Security.Authentication.Web.Core.WebAuthenticationCoreManager]::GetTokenSilentlyAsync($request, $account)) ([Windows.Security.Authentication.Web.Core.WebTokenRequestResult,Windows,ContentType=WindowsRuntime])
 	if ($null -eq $result -Or $result.ResponseStatus -ne 0) {return $null}
@@ -587,25 +601,15 @@ if ($esuResult -eq 1 -And ($esuStatus -eq 3 -Or $esuStatus -eq 11 -Or $esuStatus
 }
 
 if ($DMA_SSO) {
-	$null = New-ItemProperty $gKey "Nation" -Value 244 -Type String -Force -EA 0
-	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {
-		Copy-Item (Get-Command reg.exe).Source .\reg1.exe -Force -EA 0
-		& .\reg1.exe add "$($rKey.Replace(':',''))" /v DeviceRegion /t REG_DWORD /d 244 /f > $null 2>&1
-		Remove-Item .\reg1.exe -Force -EA 0
-	}
+	ReRegion 244
 }
 . ObtainToken
 if ($DMA_SSO) {
-	$null = New-ItemProperty $gKey "Nation" -Value $GeoId -Type String -Force -EA 0
-	if ($null -ne (Get-ItemProperty $rKey -EA 0)) {
-		Copy-Item (Get-Command reg.exe).Source .\reg1.exe -Force -EA 0
-		& .\reg1.exe add "$($rKey.Replace(':',''))" /v DeviceRegion /t REG_DWORD /d $GeoId /f > $null 2>&1
-		Remove-Item .\reg1.exe -Force -EA 0
-	}
+	ReRegion $GeoId
 }
 
 if ($null -eq $msaToken) {
-	CONOUT "`nEnrollment is not possible without MSA Token."
+	CONOUT "`nEnrollment is not possible without Microsoft Account Token."
 	ExitScript 1
 	if (!$bDefault) {
 		CONOUT "`nRun the script without parameters to obtain other tokens."
